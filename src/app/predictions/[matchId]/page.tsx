@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import PredictionForm from '@/components/PredictionForm'
+import { getTeamName } from '@/lib/flags'
 import { format, parseISO, isBefore, subHours } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -61,11 +62,11 @@ export default async function PredictionPage({
               <div className="text-4xl mb-2">
                 {/* flag from PredictionForm */}
               </div>
-              <div className="font-bold text-sm text-[#003049]">{match.home_team}</div>
+              <div className="font-bold text-sm text-[#003049]">{getTeamName(match.home_team_code, match.home_team)}</div>
             </div>
             <div className="font-heading font-bold text-2xl text-[#BBD9EE]">VS</div>
             <div className="text-center">
-              <div className="font-bold text-sm text-[#003049]">{match.away_team}</div>
+              <div className="font-bold text-sm text-[#003049]">{getTeamName(match.away_team_code, match.away_team)}</div>
             </div>
           </div>
 

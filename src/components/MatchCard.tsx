@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Match, Prediction } from '@/types'
 import { format, parseISO, isBefore, subHours } from 'date-fns'
-import { getFlagUrl } from '@/lib/flags'
+import { getFlagUrl, getTeamName } from '@/lib/flags'
 
 interface Props {
   match: Match
@@ -67,8 +67,8 @@ export default function MatchCard({ match, prediction }: Props) {
         <div className="flex items-center gap-2">
           {/* Home */}
           <div className="flex-1 flex items-center gap-2.5 min-w-0">
-            <Flag code={match.home_team_code} name={match.home_team} size={28} />
-            <span className="text-sm font-semibold text-[#003049] truncate">{match.home_team}</span>
+            <Flag code={match.home_team_code} name={getTeamName(match.home_team_code, match.home_team)} size={28} />
+            <span className="text-sm font-semibold text-[#003049] truncate">{getTeamName(match.home_team_code, match.home_team)}</span>
           </div>
 
           {/* Score or VS */}
@@ -84,8 +84,8 @@ export default function MatchCard({ match, prediction }: Props) {
 
           {/* Away */}
           <div className="flex-1 flex items-center justify-end gap-2.5 min-w-0">
-            <span className="text-sm font-semibold text-[#003049] truncate text-right">{match.away_team}</span>
-            <Flag code={match.away_team_code} name={match.away_team} size={28} />
+            <span className="text-sm font-semibold text-[#003049] truncate text-right">{getTeamName(match.away_team_code, match.away_team)}</span>
+            <Flag code={match.away_team_code} name={getTeamName(match.away_team_code, match.away_team)} size={28} />
           </div>
         </div>
 

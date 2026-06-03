@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Match, Prediction } from '@/types'
-import { getFlagUrl } from '@/lib/flags'
+import { getFlagUrl, getTeamName } from '@/lib/flags'
 
 interface Props {
   match: Match
@@ -51,9 +51,7 @@ export default function PredictionForm({ match, prediction, userId, isLocked }: 
     if (error) {
       setError('Error al guardar. Intentá de nuevo.')
     } else {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
-      router.refresh()
+      router.push('/partidos')
     }
     setSaving(false)
   }
@@ -67,11 +65,11 @@ export default function PredictionForm({ match, prediction, userId, isLocked }: 
           <div>
             <p className="text-[10px] text-[#4A6270] mb-4 uppercase font-mono tracking-widest">Tu predicción</p>
             <div className="flex items-center justify-center gap-5 mb-4">
-              <Flag code={match.home_team_code} name={match.home_team} size={48} />
+              <Flag code={match.home_team_code} name={getTeamName(match.home_team_code, match.home_team)} size={48} />
               <span className="font-heading text-5xl font-bold text-[#236391]">
                 {prediction.home_score} – {prediction.away_score}
               </span>
-              <Flag code={match.away_team_code} name={match.away_team} size={48} />
+              <Flag code={match.away_team_code} name={getTeamName(match.away_team_code, match.away_team)} size={48} />
             </div>
             {prediction.points !== null && (
               <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm ${
@@ -105,9 +103,9 @@ export default function PredictionForm({ match, prediction, userId, isLocked }: 
         {/* Home */}
         <div className="text-center">
           <div className="flex justify-center mb-2">
-            <Flag code={match.home_team_code} name={match.home_team} size={48} />
+            <Flag code={match.home_team_code} name={getTeamName(match.home_team_code, match.home_team)} size={48} />
           </div>
-          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px] mx-auto">{match.home_team}</p>
+          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px] mx-auto">{getTeamName(match.home_team_code, match.home_team)}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setHome(h => Math.max(0, h - 1))} className={btnClass}>−</button>
             <span className="font-heading text-4xl font-bold text-[#003049] w-10 text-center">{home}</span>
@@ -120,9 +118,9 @@ export default function PredictionForm({ match, prediction, userId, isLocked }: 
         {/* Away */}
         <div className="text-center">
           <div className="flex justify-center mb-2">
-            <Flag code={match.away_team_code} name={match.away_team} size={48} />
+            <Flag code={match.away_team_code} name={getTeamName(match.away_team_code, match.away_team)} size={48} />
           </div>
-          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px] mx-auto">{match.away_team}</p>
+          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px] mx-auto">{getTeamName(match.away_team_code, match.away_team)}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setAway(a => Math.max(0, a - 1))} className={btnClass}>−</button>
             <span className="font-heading text-4xl font-bold text-[#003049] w-10 text-center">{away}</span>
