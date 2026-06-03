@@ -1,29 +1,35 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/config'
 
-// Called by a cron job or manually with the sync secret
+const STATUS_MAP: Record<string, string> = {
+  TIMED: 'SCHEDULED',
+  SCHEDULED: 'SCHEDULED',
+  IN_PLAY: 'LIVE',
+  PAUSED: 'LIVE',
+  FINISHED: 'FINISHED',
+  POSTPONED: 'POSTPONED',
+}
+
 // GET /api/sync-results?secret=xxx
-// Uses anon key + SECURITY DEFINER DB function — no service_role key needed
+// Syncs results + team names (TBD→real) + status for all matches
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   if (searchParams.get('secret') !== process.env.SYNC_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
   const apiKey = process.env.FOOTBALL_DATA_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'No API key configured' }, { status: 500 })
   }
 
-  // FIFA World Cup 2026 competition ID on football-data.org
+  // Fetch ALL matches (not just finished) so team names update too
   const res = await fetch(
-    'https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',
-    { headers: { 'X-Auth-Token': apiKey } }
+    'https://api.football-data.org/v4/competitions/WC/matches',
+    { headers: { 'X-Auth-Token': apiKey }, next: { revalidate: 0 } }
   )
 
   if (!res.ok) {
@@ -31,23 +37,25 @@ export async function GET(request: Request) {
   }
 
   const json = await res.json()
-  const apiMatches: Array<{ id: number; score: { fullTime: { home: number | null; away: number | null } } }> =
-    json.matches ?? []
+  const apiMatches = json.matches ?? []
 
-  // Build results array for bulk sync
-  const results = apiMatches
-    .filter(m => m.score?.fullTime?.home !== null && m.score?.fullTime?.home !== undefined)
-    .map(m => ({
-      api_match_id: String(m.id),
-      home_score: m.score.fullTime.home,
-      away_score: m.score.fullTime.away,
-    }))
+  const results = apiMatches.map((m: {
+    id: number
+    status: string
+    homeTeam: { name?: string; tla?: string } | null
+    awayTeam: { name?: string; tla?: string } | null
+    score: { fullTime: { home: number | null; away: number | null } }
+  }) => ({
+    api_match_id: String(m.id),
+    status: STATUS_MAP[m.status] ?? 'SCHEDULED',
+    home_team: m.homeTeam?.name ?? null,
+    away_team: m.awayTeam?.name ?? null,
+    home_team_code: m.homeTeam?.tla ?? null,
+    away_team_code: m.awayTeam?.tla ?? null,
+    home_score: m.score?.fullTime?.home ?? null,
+    away_score: m.score?.fullTime?.away ?? null,
+  }))
 
-  if (results.length === 0) {
-    return NextResponse.json({ updated: 0, pointsCalculated: 0 })
-  }
-
-  // Call SECURITY DEFINER function — bypasses RLS without service_role key
   const { data, error } = await supabase.rpc('bulk_sync_results', {
     p_results: results,
   })
@@ -56,5 +64,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json({ ...data, total_matches_processed: results.length })
 }
