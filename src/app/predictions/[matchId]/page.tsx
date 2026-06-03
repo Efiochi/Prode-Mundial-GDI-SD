@@ -16,6 +16,14 @@ const STAGE_LABELS: Record<string, string> = {
   FINAL: 'Gran Final',
 }
 
+type GroupPrediction = {
+  user_id: string
+  home_score: number
+  away_score: number
+  points: number | null
+  display_name: string
+}
+
 export default async function PredictionPage({
   params,
 }: {
@@ -45,6 +53,38 @@ export default async function PredictionPage({
     ? `Grupo ${match.group_name} — ${STAGE_LABELS.GROUP}`
     : STAGE_LABELS[match.stage] ?? match.stage
 
+  // Fetch all predictions for this match (only when locked — after that, picks are public)
+  let groupPredictions: GroupPrediction[] = []
+  if (isLocked) {
+    const { data: allPreds } = await supabase
+      .from('predictions')
+      .select('user_id, home_score, away_score, points')
+      .eq('match_id', matchId)
+
+    if (allPreds && allPreds.length > 0) {
+      const userIds = allPreds.map(p => p.user_id)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds)
+      const profileMap = new Map(profiles?.map(p => [p.id, p.display_name]))
+
+      groupPredictions = allPreds.map(p => ({
+        ...p,
+        display_name: profileMap.get(p.user_id) ?? 'Jugador',
+      }))
+
+      // Sort: my pick first, then by points desc
+      groupPredictions.sort((a, b) => {
+        if (a.user_id === user.id) return -1
+        if (b.user_id === user.id) return 1
+        const pa = a.points ?? -1
+        const pb = b.points ?? -1
+        return pb - pa
+      })
+    }
+  }
+
   return (
     <div className="min-h-screen stadium-bg">
       <Navbar user={user} displayName={displayName} />
@@ -59,9 +99,6 @@ export default async function PredictionPage({
           {/* Teams header */}
           <div className="flex items-center justify-center gap-8 mb-4">
             <div className="text-center">
-              <div className="text-4xl mb-2">
-                {/* flag from PredictionForm */}
-              </div>
               <div className="font-bold text-sm text-[#003049]">{getTeamName(match.home_team_code, match.home_team)}</div>
             </div>
             <div className="font-heading font-bold text-2xl text-[#BBD9EE]">VS</div>
@@ -109,6 +146,56 @@ export default async function PredictionPage({
               isLocked={isLocked}
             />
           </div>
+
+          {/* Group predictions (shown when locked) */}
+          {isLocked && groupPredictions.length > 0 && (
+            <div className="mt-6 border-t border-[#BBD9EE] pt-5">
+              <h3 className="font-heading font-bold text-sm text-[#003049] uppercase tracking-tight mb-3">
+                Predicciones del grupo
+                <span className="ml-2 text-[10px] font-mono text-[#BBD9EE] normal-case tracking-normal">
+                  {groupPredictions.length} jugadores
+                </span>
+              </h3>
+              <div className="space-y-2">
+                {groupPredictions.map(p => (
+                  <div
+                    key={p.user_id}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl ${
+                      p.user_id === user.id ? 'bg-[#D6E9FA]/60' : 'bg-[#F0F7FF]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#D6E9FA] border border-[#74ACDF] flex items-center justify-center shrink-0">
+                        <span className="font-bold text-[10px] text-[#236391] uppercase">
+                          {p.display_name.charAt(0)}
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium text-[#003049]">
+                        {p.display_name}
+                        {p.user_id === user.id && (
+                          <span className="text-[#74ACDF] font-mono text-[10px] ml-1">(vos)</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading font-bold text-sm text-[#236391]">
+                        {p.home_score} – {p.away_score}
+                      </span>
+                      {p.points !== null && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                          p.points === 3 ? 'bg-green-100 text-green-700 border-green-200' :
+                          p.points === 1 ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                          'bg-red-50 text-red-500 border-red-100'
+                        }`}>
+                          {p.points === 3 ? '⚽ +3' : p.points === 1 ? '✓ +1' : '✗ 0'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

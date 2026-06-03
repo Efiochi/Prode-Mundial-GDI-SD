@@ -11,14 +11,15 @@ export default async function LeaderboardPage() {
   if (!user) redirect('/login')
 
   const [{ data }, profileResult] = await Promise.all([
-    supabase.from('leaderboard').select('*').order('total_points', { ascending: false }).limit(10),
+    supabase.from('leaderboard').select('*').order('total_points', { ascending: false }),
     supabase.from('profiles').select('display_name').eq('id', user.id).single(),
   ])
 
-  const top10: LeaderboardEntry[] = data ?? []
+  const allPlayers: LeaderboardEntry[] = data ?? []
   const displayName = profileResult.data?.display_name
 
   const medals = ['🥇', '🥈', '🥉']
+  const myPosition = allPlayers.findIndex(e => e.user_id === user.id)
 
   return (
     <div className="min-h-screen stadium-bg">
@@ -26,44 +27,60 @@ export default async function LeaderboardPage() {
 
       <main className="max-w-2xl mx-auto px-4 md:px-8 py-8 pb-16">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="font-heading font-bold text-3xl text-[#003049] uppercase tracking-tight flex items-center gap-3">
-            <span>🏆</span> Top 10
+            <span>🏆</span> Tabla de Posiciones
           </h1>
           <p className="text-[#4A6270] text-sm mt-1">
-            3 pts resultado exacto · 1 pt ganador/empate
+            {allPlayers.length} jugadores · 3 pts exacto · 1 pt ganador
           </p>
         </div>
 
+        {/* My position banner (if not in top 3) */}
+        {myPosition > 2 && (
+          <div className="glass-card rounded-xl px-4 py-3 mb-4 flex items-center justify-between bg-[#D6E9FA]/40">
+            <div className="flex items-center gap-3">
+              <span className="font-mono font-bold text-sm text-[#4A6270]">#{myPosition + 1}</span>
+              <div className="w-8 h-8 rounded-full bg-[#D6E9FA] border-2 border-[#74ACDF] flex items-center justify-center">
+                <span className="font-bold text-xs text-[#236391] uppercase">{(displayName ?? 'J').charAt(0)}</span>
+              </div>
+              <span className="font-bold text-[#003049] text-sm">{displayName ?? 'Vos'} <span className="text-[#74ACDF] font-mono text-xs">(vos)</span></span>
+            </div>
+            <div className="font-heading font-bold text-xl text-[#236391]">
+              {allPlayers[myPosition]?.total_points ?? 0} <span className="text-sm text-[#4A6270] font-mono">pts</span>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <div className="glass-card rounded-2xl overflow-hidden">
-          {top10.length === 0 && (
+          {allPlayers.length === 0 && (
             <div className="p-12 text-center text-[#4A6270]">
               <div className="text-4xl mb-3">🏆</div>
               <p>Todavía no hay puntos cargados.</p>
             </div>
           )}
 
-          {top10.map((entry, i) => {
+          {allPlayers.map((entry, i) => {
             const isMe = entry.user_id === user.id
             return (
               <div
                 key={entry.user_id}
-                className={`flex items-center gap-4 px-6 py-4 transition-colors border-b last:border-0 border-[#BBD9EE] ${
+                className={`flex items-center gap-4 px-5 py-3.5 transition-colors border-b last:border-0 border-[#BBD9EE] ${
                   isMe ? 'bg-[#D6E9FA]/60' : 'hover:bg-[#F0F7FF]'
                 }`}
               >
                 {/* Rank */}
-                <div className="w-8 text-center">
+                <div className="w-7 text-center shrink-0">
                   {i < 3
-                    ? <span className="text-xl">{medals[i]}</span>
+                    ? <span className="text-lg">{medals[i]}</span>
                     : <span className="font-mono font-bold text-sm text-[#4A6270]">{i + 1}</span>
                   }
                 </div>
 
                 {/* Avatar */}
-                <div className="w-9 h-9 rounded-full bg-[#D6E9FA] border-2 border-[#74ACDF] flex items-center justify-center flex-shrink-0">
-                  <span className="font-bold text-sm text-[#236391] uppercase">
+                <div className="w-8 h-8 rounded-full bg-[#D6E9FA] border-2 border-[#74ACDF] flex items-center justify-center flex-shrink-0">
+                  <span className="font-bold text-xs text-[#236391] uppercase">
                     {entry.display_name.charAt(0)}
                   </span>
                 </div>

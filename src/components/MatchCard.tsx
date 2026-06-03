@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { Match, Prediction } from '@/types'
 import { format, parseISO, isBefore, subHours } from 'date-fns'
 import { getFlagUrl, getTeamName } from '@/lib/flags'
+import Countdown from '@/components/Countdown'
 
 interface Props {
   match: Match
@@ -56,9 +57,10 @@ export default function MatchCard({ match, prediction }: Props) {
               </span>
             )}
             {!finished && !live && (
-              <span className="text-xs text-[#4A6270]">
-                {format(kickoff, 'HH:mm')}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[#4A6270]">{format(kickoff, 'HH:mm')}</span>
+                {!locked && <Countdown matchDate={match.match_date} />}
+              </div>
             )}
           </div>
         </div>
