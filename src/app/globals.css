@@ -1,7 +1,53 @@
 @import "tailwindcss";
 
-body {
-  background: #030712;
-  color: #f9fafb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+@theme {
+  --color-primary: #74ACDF;
+  --color-primary-dark: #236391;
+  --color-secondary: #F6B40E;
+  --color-secondary-light: #FFEDC1;
+  --color-surface: #F0F7FF;
+  --color-surface-card: #FFFFFF;
+  --color-on-surface: #003049;
+  --color-on-surface-variant: #4A6270;
+  --color-outline: #BBD9EE;
+  --color-primary-container: #D6E9FA;
+  --color-error: #ba1a1a;
 }
+
+body {
+  background: #F0F7FF;
+  color: #003049;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.font-heading {
+  font-family: var(--font-archivo), sans-serif;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid #BBD9EE;
+  box-shadow: 0 4px 20px rgba(116, 172, 223, 0.1);
+}
+
+.glow-hover {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.glow-hover:hover {
+  box-shadow: 0 8px 30px rgba(116, 172, 223, 0.25);
+  transform: translateY(-2px);
+}
+
+.stadium-bg {
+  background: linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 60%, #F0F7FF 100%);
+  min-height: 100vh;
+}
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+

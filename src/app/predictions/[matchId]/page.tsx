@@ -5,6 +5,16 @@ import PredictionForm from '@/components/PredictionForm'
 import { format, parseISO, isBefore, subHours } from 'date-fns'
 import { es } from 'date-fns/locale'
 
+const STAGE_LABELS: Record<string, string> = {
+  GROUP: 'Fase de Grupos',
+  ROUND_OF_32: 'Round of 32',
+  ROUND_OF_16: 'Octavos de Final',
+  QUARTER_FINAL: 'Cuartos de Final',
+  SEMI_FINAL: 'Semifinales',
+  THIRD_PLACE: 'Tercer Puesto',
+  FINAL: 'Gran Final',
+}
+
 export default async function PredictionPage({
   params,
 }: {
@@ -15,80 +25,91 @@ export default async function PredictionPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [matchResult, predictionResult] = await Promise.all([
+  const [matchResult, predictionResult, profileResult] = await Promise.all([
     supabase.from('matches').select('*').eq('id', matchId).single(),
     supabase.from('predictions').select('*').eq('match_id', matchId).eq('user_id', user.id).maybeSingle(),
+    supabase.from('profiles').select('display_name').eq('id', user.id).single(),
   ])
 
   if (!matchResult.data) notFound()
 
   const match = matchResult.data
   const prediction = predictionResult.data
+  const displayName = profileResult.data?.display_name
 
-  // Lock predictions 1 hour before kickoff
   const cutoff = subHours(parseISO(match.match_date), 1)
   const isLocked = isBefore(cutoff, new Date()) || match.status !== 'SCHEDULED'
-
-  const matchDateFormatted = format(
-    parseISO(match.match_date),
-    "EEEE d 'de' MMMM · HH:mm",
-    { locale: es }
-  )
+  const matchDate = format(parseISO(match.match_date), "EEEE d 'de' MMMM · HH:mm", { locale: es })
+  const stageLabel = match.stage === 'GROUP'
+    ? `Grupo ${match.group_name} — ${STAGE_LABELS.GROUP}`
+    : STAGE_LABELS[match.stage] ?? match.stage
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <Navbar user={user} />
-      <main className="max-w-md mx-auto px-4 py-8">
-        <div className="bg-gray-800 rounded-2xl p-6">
-          <div className="text-center mb-6">
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 capitalize">
-              {match.stage === 'GROUP' ? `Grupo ${match.group_name}` : match.stage}
-            </p>
-            <div className="flex items-center justify-center gap-6 mt-4">
-              <div className="text-center">
-                <div className="text-3xl mb-1">{flagEmoji(match.home_team_code)}</div>
-                <div className="font-semibold">{match.home_team}</div>
+    <div className="min-h-screen stadium-bg">
+      <Navbar user={user} displayName={displayName} />
+
+      <main className="max-w-md mx-auto px-4 py-8 pb-16">
+        <div className="glass-card rounded-2xl p-6 md:p-8">
+          {/* Stage label */}
+          <p className="text-[10px] font-mono font-semibold text-[#74ACDF] uppercase tracking-widest text-center mb-5">
+            {stageLabel}
+          </p>
+
+          {/* Teams header */}
+          <div className="flex items-center justify-center gap-8 mb-4">
+            <div className="text-center">
+              <div className="text-4xl mb-2">
+                {/* flag from PredictionForm */}
               </div>
-              <div className="text-2xl font-bold text-gray-500">vs</div>
-              <div className="text-center">
-                <div className="text-3xl mb-1">{flagEmoji(match.away_team_code)}</div>
-                <div className="font-semibold">{match.away_team}</div>
-              </div>
+              <div className="font-bold text-sm text-[#003049]">{match.home_team}</div>
             </div>
-            <p className="text-sm text-gray-400 mt-4 capitalize">{matchDateFormatted}</p>
+            <div className="font-heading font-bold text-2xl text-[#BBD9EE]">VS</div>
+            <div className="text-center">
+              <div className="font-bold text-sm text-[#003049]">{match.away_team}</div>
+            </div>
           </div>
 
-          {match.status === 'FINISHED' && match.home_score !== null && (
-            <div className="text-center mb-6 py-3 bg-gray-700 rounded-xl">
-              <p className="text-xs text-gray-400 mb-1">Resultado final</p>
-              <p className="text-2xl font-bold">
-                {match.home_score} — {match.away_score}
-              </p>
-            </div>
-          )}
+          <p className="text-center text-xs text-[#4A6270] font-mono capitalize mb-5">
+            {matchDate}
+          </p>
 
-          <PredictionForm
-            match={match}
-            prediction={prediction}
-            userId={user.id}
-            isLocked={isLocked}
-          />
+          {/* Status badges */}
+          <div className="flex justify-center mb-5">
+            {match.status === 'LIVE' && (
+              <span className="flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> En Vivo
+              </span>
+            )}
+            {match.status === 'FINISHED' && match.home_score !== null && (
+              <div className="bg-[#F0F7FF] border border-[#BBD9EE] rounded-xl px-6 py-3 text-center">
+                <p className="text-[10px] font-mono text-[#4A6270] uppercase tracking-widest mb-1">Resultado final</p>
+                <p className="font-heading font-bold text-3xl text-[#236391]">
+                  {match.home_score} – {match.away_score}
+                </p>
+              </div>
+            )}
+            {isLocked && match.status === 'SCHEDULED' && (
+              <span className="flex items-center gap-1.5 bg-[#F0F7FF] border border-[#BBD9EE] text-[#4A6270] text-xs font-mono font-semibold px-3 py-1 rounded-full uppercase tracking-widest">
+                🔒 Cerrado
+              </span>
+            )}
+            {!isLocked && (
+              <span className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-mono font-semibold px-3 py-1 rounded-full uppercase tracking-widest">
+                ✓ Aceptando predicciones
+              </span>
+            )}
+          </div>
+
+          <div className="border-t border-[#BBD9EE] pt-5">
+            <PredictionForm
+              match={match}
+              prediction={prediction}
+              userId={user.id}
+              isLocked={isLocked}
+            />
+          </div>
         </div>
       </main>
     </div>
   )
-}
-
-function flagEmoji(code: string): string {
-  const flags: Record<string, string> = {
-    ARG: '🇦🇷', BRA: '🇧🇷', URU: '🇺🇾', COL: '🇨🇴', CHI: '🇨🇱', PAR: '🇵🇾',
-    PER: '🇵🇪', ECU: '🇪🇨', VEN: '🇻🇪', BOL: '🇧🇴',
-    USA: '🇺🇸', MEX: '🇲🇽', CAN: '🇨🇦', CRC: '🇨🇷', PAN: '🇵🇦', HON: '🇭🇳',
-    GER: '🇩🇪', FRA: '🇫🇷', ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ESP: '🇪🇸', ITA: '🇮🇹', POR: '🇵🇹',
-    NED: '🇳🇱', BEL: '🇧🇪', SUI: '🇨🇭', CRO: '🇭🇷', SRB: '🇷🇸', DEN: '🇩🇰',
-    AUT: '🇦🇹', POL: '🇵🇱', HUN: '🇭🇺', SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', WAL: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
-    MAR: '🇲🇦', SEN: '🇸🇳', NGA: '🇳🇬', EGY: '🇪🇬', CMR: '🇨🇲', CIV: '🇨🇮',
-    JPN: '🇯🇵', KOR: '🇰🇷', AUS: '🇦🇺', IRN: '🇮🇷', SAU: '🇸🇦', QAT: '🇶🇦',
-  }
-  return flags[code] ?? '🏳️'
 }

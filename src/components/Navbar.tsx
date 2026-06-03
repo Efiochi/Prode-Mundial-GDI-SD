@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
-export default function Navbar({ user }: { user: User }) {
+export default function Navbar({ user, displayName }: { user: User; displayName?: string }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -17,37 +17,77 @@ export default function Navbar({ user }: { user: User }) {
   }
 
   const links = [
-    { href: '/dashboard', label: 'Partidos', icon: '⚽' },
-    { href: '/leaderboard', label: 'Top 10', icon: '🏆' },
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/leaderboard', label: 'Top 10' },
   ]
 
+  const name = displayName || user.email?.split('@')[0] || 'Jugador'
+
   return (
-    <nav className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
-      <div className="max-w-2xl mx-auto px-4 flex items-center h-14 gap-4">
-        <span className="font-bold text-green-400 mr-2 hidden sm:block">Mundial 2026</span>
-        <div className="flex gap-1 flex-1">
-          {links.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                pathname === link.href
-                  ? 'bg-gray-700 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              <span>{link.icon}</span>
-              <span>{link.label}</span>
-            </Link>
-          ))}
+    <header className="bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-[#BBD9EE] shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 md:px-16 py-3 flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <span className="text-[#F6B40E] text-lg">★</span>
+            <span className="font-heading font-bold text-xl text-[#236391] uppercase tracking-tighter">
+              World Cup Prode
+            </span>
+          </Link>
+
+          {/* Nav links */}
+          <nav className="hidden md:flex items-center gap-6">
+            {links.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors pb-0.5 ${
+                  pathname === link.href
+                    ? 'text-[#236391] border-b-2 border-[#236391]'
+                    : 'text-[#4A6270] hover:text-[#236391]'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <button
-          onClick={signOut}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          Salir
-        </button>
+
+        {/* User */}
+        <div className="flex items-center gap-3">
+          <div className="hidden md:block text-right">
+            <div className="text-sm font-bold text-[#003049]">{name}</div>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-[#D6E9FA] border-2 border-[#74ACDF] flex items-center justify-center">
+            <span className="text-[#236391] font-bold text-sm uppercase">
+              {name.charAt(0)}
+            </span>
+          </div>
+          <button
+            onClick={signOut}
+            className="text-xs text-[#4A6270] hover:text-[#236391] transition-colors"
+          >
+            Salir
+          </button>
+        </div>
       </div>
-    </nav>
+
+      {/* Mobile nav */}
+      <div className="md:hidden border-t border-[#BBD9EE] flex">
+        {links.map(link => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`flex-1 text-center py-2 text-xs font-semibold transition-colors ${
+              pathname === link.href
+                ? 'text-[#236391] border-b-2 border-[#236391] bg-[#F0F7FF]'
+                : 'text-[#4A6270]'
+            }`}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </header>
   )
 }

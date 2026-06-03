@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Match, Prediction } from '@/types'
 import { format, parseISO, isBefore, subHours } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 interface Props {
   match: Match
@@ -13,74 +14,96 @@ const FLAGS: Record<string, string> = {
   USA: '🇺🇸', MEX: '🇲🇽', CAN: '🇨🇦', CRC: '🇨🇷', PAN: '🇵🇦', HON: '🇭🇳',
   GER: '🇩🇪', FRA: '🇫🇷', ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ESP: '🇪🇸', ITA: '🇮🇹', POR: '🇵🇹',
   NED: '🇳🇱', BEL: '🇧🇪', SUI: '🇨🇭', CRO: '🇭🇷', SRB: '🇷🇸', DEN: '🇩🇰',
-  AUT: '🇦🇹', POL: '🇵🇱', HUN: '🇭🇺', SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', WAL: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  AUT: '🇦🇹', POL: '🇵🇱', SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', SWE: '🇸🇪', NOR: '🇳🇴', CZE: '🇨🇿',
   MAR: '🇲🇦', SEN: '🇸🇳', NGA: '🇳🇬', EGY: '🇪🇬', CMR: '🇨🇲', CIV: '🇨🇮',
-  JPN: '🇯🇵', KOR: '🇰🇷', AUS: '🇦🇺', IRN: '🇮🇷', SAU: '🇸🇦', QAT: '🇶🇦',
+  TUN: '🇹🇳', ALG: '🇩🇿', GHA: '🇬🇭', RSA: '🇿🇦', COD: '🇨🇩',
+  JPN: '🇯🇵', KOR: '🇰🇷', AUS: '🇦🇺', IRN: '🇮🇷', QAT: '🇶🇦',
+  KSA: '🇸🇦', IRQ: '🇮🇶', JOR: '🇯🇴', UZB: '🇺🇿', TUR: '🇹🇷', HAI: '🇭🇹',
+  BIH: '🇧🇦', CPV: '🇨🇻', NZL: '🇳🇿', URY: '🇺🇾', CUW: '🇨🇼',
 }
 
 export default function MatchCard({ match, prediction }: Props) {
   const kickoff = parseISO(match.match_date)
   const locked = isBefore(subHours(kickoff, 1), new Date()) || match.status !== 'SCHEDULED'
   const finished = match.status === 'FINISHED'
+  const live = match.status === 'LIVE'
 
-  const pointsColor =
-    prediction?.points === 3 ? 'text-green-400' :
-    prediction?.points === 1 ? 'text-blue-400' :
-    prediction?.points === 0 ? 'text-red-400' :
-    'text-gray-400'
+  const pointsColors: Record<number, string> = {
+    3: 'bg-green-100 text-green-700 border-green-200',
+    1: 'bg-blue-100 text-blue-700 border-blue-200',
+    0: 'bg-red-50 text-red-600 border-red-100',
+  }
+
+  const stageLabel = match.stage === 'GROUP'
+    ? `Grupo ${match.group_name}`
+    : match.stage.replace('_', ' ').replace('ROUND OF', 'R')
 
   return (
     <Link href={`/predictions/${match.id}`}>
-      <div className={`bg-gray-800 hover:bg-gray-750 rounded-xl p-4 transition-colors border ${
-        locked ? 'border-gray-700' : 'border-gray-700 hover:border-green-700'
-      }`}>
+      <div className="glass-card rounded-xl p-4 glow-hover cursor-pointer">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-mono font-semibold text-[#4A6270] uppercase tracking-widest">
+            {stageLabel}
+          </span>
+          <div className="flex items-center gap-2">
+            {live && (
+              <span className="flex items-center gap-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                Live
+              </span>
+            )}
+            {!finished && !live && (
+              <span className="text-xs text-[#4A6270]">
+                {format(kickoff, 'HH:mm', { locale: es })}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Teams + Score */}
         <div className="flex items-center gap-3">
-          {/* Teams */}
-          <div className="flex-1 flex items-center gap-2">
-            <span>{FLAGS[match.home_team_code] ?? '🏳️'}</span>
-            <span className="font-medium text-sm">{match.home_team}</span>
+          {/* Home */}
+          <div className="flex-1 flex items-center gap-2 min-w-0">
+            <span className="text-2xl">{FLAGS[match.home_team_code] ?? '🏳️'}</span>
+            <span className="text-sm font-semibold text-[#003049] truncate">{match.home_team}</span>
           </div>
 
-          {/* Score / Time */}
-          <div className="text-center px-2 min-w-[80px]">
+          {/* Score or VS */}
+          <div className="text-center min-w-[60px]">
             {finished && match.home_score !== null ? (
-              <div className="font-bold text-lg">
-                {match.home_score} — {match.away_score}
+              <div className="font-heading font-bold text-xl text-[#236391]">
+                {match.home_score} – {match.away_score}
               </div>
             ) : (
-              <div className="text-sm text-gray-400">
-                {format(kickoff, 'HH:mm')}
-              </div>
-            )}
-            {match.status === 'LIVE' && (
-              <span className="text-xs text-red-400 animate-pulse">EN VIVO</span>
+              <div className="text-sm font-bold text-[#BBD9EE]">VS</div>
             )}
           </div>
 
-          <div className="flex-1 flex items-center justify-end gap-2">
-            <span className="font-medium text-sm">{match.away_team}</span>
-            <span>{FLAGS[match.away_team_code] ?? '🏳️'}</span>
+          {/* Away */}
+          <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+            <span className="text-sm font-semibold text-[#003049] truncate text-right">{match.away_team}</span>
+            <span className="text-2xl">{FLAGS[match.away_team_code] ?? '🏳️'}</span>
           </div>
         </div>
 
         {/* Prediction row */}
-        <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between text-sm">
-          <span className="text-gray-500 text-xs">
-            {locked ? (finished ? 'Finalizado' : 'Cerrado') : 'Hacer predicción →'}
-          </span>
+        <div className="mt-3 pt-3 border-t border-[#BBD9EE] flex items-center justify-between">
           {prediction ? (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-xs">
-                Tu pronóstico: {prediction.home_score} — {prediction.away_score}
+            <div className="flex items-center gap-2 w-full justify-between">
+              <span className="text-xs text-[#4A6270]">
+                Tu pronóstico: <span className="font-bold text-[#236391]">{prediction.home_score} – {prediction.away_score}</span>
               </span>
               {prediction.points !== null && (
-                <span className={`font-bold text-sm ${pointsColor}`}>
-                  +{prediction.points}
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${pointsColors[prediction.points] ?? ''}`}>
+                  {prediction.points === 3 ? '⚽ +3' : prediction.points === 1 ? '✓ +1' : '✗ 0'}
                 </span>
               )}
             </div>
           ) : (
-            <span className="text-gray-600 text-xs">Sin predicción</span>
+            <span className={`text-xs font-medium ${locked ? 'text-[#BBD9EE]' : 'text-[#74ACDF]'}`}>
+              {locked ? (finished ? 'Finalizado' : 'Cerrado') : '→ Hacer predicción'}
+            </span>
           )}
         </div>
       </div>
