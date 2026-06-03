@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'flagcdn.com' },
+    ],
+  },
   env: {
     // Public values — safe to hardcode (anon key is rate-limited + RLS protected)
     NEXT_PUBLIC_SUPABASE_URL: "https://htbjfvgujgbcxclxmgnz.supabase.co",

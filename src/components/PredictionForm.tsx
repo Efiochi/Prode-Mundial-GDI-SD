@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Match, Prediction } from '@/types'
+import { getFlagUrl } from '@/lib/flags'
 
 interface Props {
   match: Match
@@ -12,15 +14,19 @@ interface Props {
   isLocked: boolean
 }
 
-const FLAGS: Record<string, string> = {
-  ARG: '🇦🇷', BRA: '🇧🇷', URU: '🇺🇾', COL: '🇨🇴', USA: '🇺🇸', MEX: '🇲🇽',
-  CAN: '🇨🇦', GER: '🇩🇪', FRA: '🇫🇷', ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ESP: '🇪🇸', POR: '🇵🇹',
-  NED: '🇳🇱', BEL: '🇧🇪', SUI: '🇨🇭', CRO: '🇭🇷', JPN: '🇯🇵', KOR: '🇰🇷',
-  MAR: '🇲🇦', SEN: '🇸🇳', QAT: '🇶🇦', AUS: '🇦🇺', TUR: '🇹🇷', SWE: '🇸🇪',
-  NOR: '🇳🇴', DEN: '🇩🇰', SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', CZE: '🇨🇿', PAR: '🇵🇾', ECU: '🇪🇨',
-  BIH: '🇧🇦', GHA: '🇬🇭', PAN: '🇵🇦', IRN: '🇮🇷', KSA: '🇸🇦', IRQ: '🇮🇶',
-  EGY: '🇪🇬', NZL: '🇳🇿', HAI: '🇭🇹', CIV: '🇨🇮', TUN: '🇹🇳', ALG: '🇩🇿',
-  RSA: '🇿🇦', COD: '🇨🇩', UZB: '🇺🇿', JOR: '🇯🇴', CPV: '🇨🇻', CUW: '🇨🇼',
+function Flag({ code, name, size = 48 }: { code: string; name: string; size?: number }) {
+  const url = getFlagUrl(code, 80)
+  if (!url) return <span className="text-4xl">🏳️</span>
+  return (
+    <Image
+      src={url}
+      alt={name}
+      width={size}
+      height={Math.round(size * 0.67)}
+      className="rounded object-cover shadow-sm"
+      unoptimized
+    />
+  )
 }
 
 export default function PredictionForm({ match, prediction, userId, isLocked }: Props) {
@@ -52,23 +58,23 @@ export default function PredictionForm({ match, prediction, userId, isLocked }: 
     setSaving(false)
   }
 
-  const btnBase = 'w-10 h-10 rounded-lg font-bold text-xl transition-all active:scale-95'
+  const btnClass = 'w-10 h-10 rounded-lg font-bold text-xl transition-all active:scale-95 bg-[#F0F7FF] text-[#236391] hover:bg-[#D6E9FA] border border-[#BBD9EE]'
 
   if (isLocked) {
     return (
-      <div className="text-center py-6">
+      <div className="text-center py-4">
         {prediction ? (
           <div>
-            <p className="text-sm text-[#4A6270] mb-3 uppercase font-mono tracking-widest">Tu predicción</p>
-            <div className="flex items-center justify-center gap-6">
-              <span className="text-4xl">{FLAGS[match.home_team_code] ?? '🏳️'}</span>
+            <p className="text-[10px] text-[#4A6270] mb-4 uppercase font-mono tracking-widest">Tu predicción</p>
+            <div className="flex items-center justify-center gap-5 mb-4">
+              <Flag code={match.home_team_code} name={match.home_team} size={48} />
               <span className="font-heading text-5xl font-bold text-[#236391]">
                 {prediction.home_score} – {prediction.away_score}
               </span>
-              <span className="text-4xl">{FLAGS[match.away_team_code] ?? '🏳️'}</span>
+              <Flag code={match.away_team_code} name={match.away_team} size={48} />
             </div>
             {prediction.points !== null && (
-              <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm ${
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm ${
                 prediction.points === 3 ? 'bg-green-100 text-green-700' :
                 prediction.points === 1 ? 'bg-blue-100 text-blue-700' :
                 'bg-red-50 text-red-600'
@@ -91,21 +97,21 @@ export default function PredictionForm({ match, prediction, userId, isLocked }: 
 
   return (
     <div>
-      <p className="text-center text-sm text-[#4A6270] mb-6 uppercase font-mono tracking-widest">
+      <p className="text-center text-[10px] text-[#4A6270] mb-6 uppercase font-mono tracking-widest">
         Ingresá tu predicción
       </p>
 
-      <div className="flex items-center justify-center gap-8">
+      <div className="flex items-center justify-center gap-6">
         {/* Home */}
         <div className="text-center">
-          <div className="text-3xl mb-2">{FLAGS[match.home_team_code] ?? '🏳️'}</div>
-          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px]">{match.home_team}</p>
+          <div className="flex justify-center mb-2">
+            <Flag code={match.home_team_code} name={match.home_team} size={48} />
+          </div>
+          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px] mx-auto">{match.home_team}</p>
           <div className="flex items-center gap-2">
-            <button onClick={() => setHome(h => Math.max(0, h - 1))}
-              className={`${btnBase} bg-[#F0F7FF] text-[#236391] hover:bg-[#D6E9FA] border border-[#BBD9EE]`}>−</button>
+            <button onClick={() => setHome(h => Math.max(0, h - 1))} className={btnClass}>−</button>
             <span className="font-heading text-4xl font-bold text-[#003049] w-10 text-center">{home}</span>
-            <button onClick={() => setHome(h => h + 1)}
-              className={`${btnBase} bg-[#F0F7FF] text-[#236391] hover:bg-[#D6E9FA] border border-[#BBD9EE]`}>+</button>
+            <button onClick={() => setHome(h => h + 1)} className={btnClass}>+</button>
           </div>
         </div>
 
@@ -113,23 +119,25 @@ export default function PredictionForm({ match, prediction, userId, isLocked }: 
 
         {/* Away */}
         <div className="text-center">
-          <div className="text-3xl mb-2">{FLAGS[match.away_team_code] ?? '🏳️'}</div>
-          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px]">{match.away_team}</p>
+          <div className="flex justify-center mb-2">
+            <Flag code={match.away_team_code} name={match.away_team} size={48} />
+          </div>
+          <p className="text-xs text-[#4A6270] mb-3 font-medium truncate max-w-[80px] mx-auto">{match.away_team}</p>
           <div className="flex items-center gap-2">
-            <button onClick={() => setAway(a => Math.max(0, a - 1))}
-              className={`${btnBase} bg-[#F0F7FF] text-[#236391] hover:bg-[#D6E9FA] border border-[#BBD9EE]`}>−</button>
+            <button onClick={() => setAway(a => Math.max(0, a - 1))} className={btnClass}>−</button>
             <span className="font-heading text-4xl font-bold text-[#003049] w-10 text-center">{away}</span>
-            <button onClick={() => setAway(a => a + 1)}
-              className={`${btnBase} bg-[#F0F7FF] text-[#236391] hover:bg-[#D6E9FA] border border-[#BBD9EE]`}>+</button>
+            <button onClick={() => setAway(a => a + 1)} className={btnClass}>+</button>
           </div>
         </div>
       </div>
 
       {error && <p className="text-red-500 text-sm text-center mt-4">{error}</p>}
 
-      <button onClick={handleSave} disabled={saving}
-        className="w-full mt-6 py-3 rounded-xl font-bold text-white text-sm uppercase tracking-wider transition-all active:scale-95 disabled:opacity-60
-          bg-[#236391] hover:bg-[#1a4f73]">
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full mt-6 py-3 rounded-xl font-bold text-white text-sm uppercase tracking-wider transition-all active:scale-95 disabled:opacity-60 bg-[#236391] hover:bg-[#1a4f73]"
+      >
         {saving ? 'Guardando...' : saved ? '✓ Guardado' : prediction ? 'Actualizar predicción' : 'Guardar predicción'}
       </button>
 

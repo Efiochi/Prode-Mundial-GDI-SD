@@ -1,25 +1,27 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Match, Prediction } from '@/types'
 import { format, parseISO, isBefore, subHours } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { getFlagUrl } from '@/lib/flags'
 
 interface Props {
   match: Match
   prediction: Prediction | null
 }
 
-const FLAGS: Record<string, string> = {
-  ARG: '🇦🇷', BRA: '🇧🇷', URU: '🇺🇾', COL: '🇨🇴', CHI: '🇨🇱', PAR: '🇵🇾',
-  PER: '🇵🇪', ECU: '🇪🇨', VEN: '🇻🇪', BOL: '🇧🇴',
-  USA: '🇺🇸', MEX: '🇲🇽', CAN: '🇨🇦', CRC: '🇨🇷', PAN: '🇵🇦', HON: '🇭🇳',
-  GER: '🇩🇪', FRA: '🇫🇷', ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ESP: '🇪🇸', ITA: '🇮🇹', POR: '🇵🇹',
-  NED: '🇳🇱', BEL: '🇧🇪', SUI: '🇨🇭', CRO: '🇭🇷', SRB: '🇷🇸', DEN: '🇩🇰',
-  AUT: '🇦🇹', POL: '🇵🇱', SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', SWE: '🇸🇪', NOR: '🇳🇴', CZE: '🇨🇿',
-  MAR: '🇲🇦', SEN: '🇸🇳', NGA: '🇳🇬', EGY: '🇪🇬', CMR: '🇨🇲', CIV: '🇨🇮',
-  TUN: '🇹🇳', ALG: '🇩🇿', GHA: '🇬🇭', RSA: '🇿🇦', COD: '🇨🇩',
-  JPN: '🇯🇵', KOR: '🇰🇷', AUS: '🇦🇺', IRN: '🇮🇷', QAT: '🇶🇦',
-  KSA: '🇸🇦', IRQ: '🇮🇶', JOR: '🇯🇴', UZB: '🇺🇿', TUR: '🇹🇷', HAI: '🇭🇹',
-  BIH: '🇧🇦', CPV: '🇨🇻', NZL: '🇳🇿', URY: '🇺🇾', CUW: '🇨🇼',
+function Flag({ code, name, size = 32 }: { code: string; name: string; size?: number }) {
+  const url = getFlagUrl(code, 40)
+  if (!url) return <span className="text-2xl">🏳️</span>
+  return (
+    <Image
+      src={url}
+      alt={name}
+      width={size}
+      height={size * 0.67}
+      className="rounded-sm object-cover shadow-sm"
+      unoptimized
+    />
+  )
 }
 
 export default function MatchCard({ match, prediction }: Props) {
@@ -36,7 +38,7 @@ export default function MatchCard({ match, prediction }: Props) {
 
   const stageLabel = match.stage === 'GROUP'
     ? `Grupo ${match.group_name}`
-    : match.stage.replace('_', ' ').replace('ROUND OF', 'R')
+    : match.stage.replace(/_/g, ' ')
 
   return (
     <Link href={`/predictions/${match.id}`}>
@@ -55,24 +57,24 @@ export default function MatchCard({ match, prediction }: Props) {
             )}
             {!finished && !live && (
               <span className="text-xs text-[#4A6270]">
-                {format(kickoff, 'HH:mm', { locale: es })}
+                {format(kickoff, 'HH:mm')}
               </span>
             )}
           </div>
         </div>
 
         {/* Teams + Score */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Home */}
-          <div className="flex-1 flex items-center gap-2 min-w-0">
-            <span className="text-2xl">{FLAGS[match.home_team_code] ?? '🏳️'}</span>
+          <div className="flex-1 flex items-center gap-2.5 min-w-0">
+            <Flag code={match.home_team_code} name={match.home_team} size={28} />
             <span className="text-sm font-semibold text-[#003049] truncate">{match.home_team}</span>
           </div>
 
           {/* Score or VS */}
-          <div className="text-center min-w-[60px]">
+          <div className="text-center min-w-[56px] flex-shrink-0">
             {finished && match.home_score !== null ? (
-              <div className="font-heading font-bold text-xl text-[#236391]">
+              <div className="font-heading font-bold text-lg text-[#236391]">
                 {match.home_score} – {match.away_score}
               </div>
             ) : (
@@ -81,9 +83,9 @@ export default function MatchCard({ match, prediction }: Props) {
           </div>
 
           {/* Away */}
-          <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+          <div className="flex-1 flex items-center justify-end gap-2.5 min-w-0">
             <span className="text-sm font-semibold text-[#003049] truncate text-right">{match.away_team}</span>
-            <span className="text-2xl">{FLAGS[match.away_team_code] ?? '🏳️'}</span>
+            <Flag code={match.away_team_code} name={match.away_team} size={28} />
           </div>
         </div>
 
@@ -92,7 +94,7 @@ export default function MatchCard({ match, prediction }: Props) {
           {prediction ? (
             <div className="flex items-center gap-2 w-full justify-between">
               <span className="text-xs text-[#4A6270]">
-                Tu pronóstico: <span className="font-bold text-[#236391]">{prediction.home_score} – {prediction.away_score}</span>
+                Pronóstico: <span className="font-bold text-[#236391]">{prediction.home_score} – {prediction.away_score}</span>
               </span>
               {prediction.points !== null && (
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${pointsColors[prediction.points] ?? ''}`}>
@@ -102,7 +104,7 @@ export default function MatchCard({ match, prediction }: Props) {
             </div>
           ) : (
             <span className={`text-xs font-medium ${locked ? 'text-[#BBD9EE]' : 'text-[#74ACDF]'}`}>
-              {locked ? (finished ? 'Finalizado' : 'Cerrado') : '→ Hacer predicción'}
+              {locked ? (finished ? 'Finalizado' : '🔒 Cerrado') : '→ Hacer predicción'}
             </span>
           )}
         </div>
