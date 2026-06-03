@@ -32,7 +32,7 @@ export default function Navbar({ user, displayName }: { user: User; displayName?
           <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
             <span className="text-[#F6B40E] text-lg">★</span>
             <span className="font-heading font-bold text-xl text-[#236391] uppercase tracking-tighter">
-              WC Prode
+              GDI/SD Prode
             </span>
           </Link>
 

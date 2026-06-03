@@ -111,8 +111,45 @@ export default async function DashboardPage() {
             )}
           </section>
 
+          {/* Rules */}
+          <section className="lg:col-span-5 space-y-6">
+          <div className="glass-card rounded-2xl p-5">
+            <h2 className="font-heading font-bold text-base text-[#003049] uppercase tracking-tight mb-4">
+              📋 Reglas del Prode
+            </h2>
+            <div className="space-y-3 text-sm text-[#4A6270]">
+              <div className="flex items-start gap-3">
+                <span className="text-lg shrink-0">⚽</span>
+                <div>
+                  <p className="font-semibold text-[#003049]">+3 puntos — Resultado exacto</p>
+                  <p className="text-xs mt-0.5">Acertás el marcador final exacto del partido.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg shrink-0">✓</span>
+                <div>
+                  <p className="font-semibold text-[#003049]">+1 punto — Ganador correcto</p>
+                  <p className="text-xs mt-0.5">Acertás quién gana o si empata, pero no el marcador exacto.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg shrink-0">✗</span>
+                <div>
+                  <p className="font-semibold text-[#003049]">0 puntos — Sin acierto</p>
+                  <p className="text-xs mt-0.5">El resultado no coincide con tu predicción.</p>
+                </div>
+              </div>
+              <div className="border-t border-[#BBD9EE] pt-3 flex items-start gap-3">
+                <span className="text-lg shrink-0">🔒</span>
+                <div>
+                  <p className="font-semibold text-[#003049]">Cierre de predicciones</p>
+                  <p className="text-xs mt-0.5">Las predicciones se cierran <span className="font-bold text-[#236391]">1 hora antes</span> del inicio de cada partido. No se pueden modificar después.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Leaderboard */}
-          <section className="lg:col-span-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading font-bold text-xl text-[#003049] uppercase tracking-tight">
                 🏆 Tabla de Posiciones

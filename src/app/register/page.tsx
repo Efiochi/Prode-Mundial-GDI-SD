@@ -52,7 +52,7 @@ export default function RegisterPage() {
         <div className="text-center mb-10">
           <div className="text-5xl mb-3">⚽</div>
           <h1 className="font-heading font-bold text-3xl text-[#236391] uppercase tracking-tighter">
-            <span className="text-[#F6B40E]">★</span> World Cup Prode
+            <span className="text-[#F6B40E]">★</span> GDI/SD Prode
           </h1>
           <p className="text-[#4A6270] text-sm mt-1 font-mono uppercase tracking-widest">USA · CAN · MEX 2026</p>
         </div>
