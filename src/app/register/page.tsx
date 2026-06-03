@@ -22,7 +22,7 @@ export default function RegisterPage() {
     const username = form.username.toLowerCase().trim()
     const fakeEmail = `${username}@prode.app`
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: fakeEmail,
       password: form.password,
       options: {
@@ -34,6 +34,11 @@ export default function RegisterPage() {
     })
     if (error) {
       setError(error.message.includes('already registered') ? 'Ese usuario ya existe.' : error.message)
+      setLoading(false)
+      return
+    }
+    if (!data.session) {
+      setError('Cuenta creada pero requiere confirmación de email. Pedile al administrador que confirme tu cuenta en Supabase.')
       setLoading(false)
       return
     }
