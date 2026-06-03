@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,11 +17,17 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
+    // Reconstruct fake email from username
+    const fakeEmail = `${username.toLowerCase().trim()}@prode.app`
+
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: fakeEmail,
+      password,
+    })
 
     if (error) {
-      setError('Email o contraseña incorrectos')
+      setError('Usuario o contraseña incorrectos')
       setLoading(false)
       return
     }
@@ -41,12 +47,14 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Email</label>
+            <label className="block text-sm text-gray-300 mb-1">Usuario</label>
             <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="tu usuario"
               required
+              autoCapitalize="none"
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-green-500"
             />
           </div>

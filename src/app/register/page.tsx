@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ email: '', password: '', username: '', display_name: '' })
+  const [form, setForm] = useState({ username: '', display_name: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -20,20 +20,29 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
+    const username = form.username.toLowerCase().trim()
+
+    // Email generado internamente — usuario nunca lo ve
+    const fakeEmail = `${username}@prode.app`
+
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
-      email: form.email,
+      email: fakeEmail,
       password: form.password,
       options: {
         data: {
-          username: form.username.toLowerCase().trim(),
-          display_name: form.display_name.trim(),
+          username,
+          display_name: form.display_name.trim() || username,
         },
       },
     })
 
     if (error) {
-      setError(error.message)
+      if (error.message.includes('already registered')) {
+        setError('Ese usuario ya existe.')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
       return
     }
@@ -53,17 +62,6 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Nombre para mostrar</label>
-            <input
-              type="text"
-              value={form.display_name}
-              onChange={e => update('display_name', e.target.value)}
-              placeholder="ej: El Tano"
-              required
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-green-500"
-            />
-          </div>
-          <div>
             <label className="block text-sm text-gray-300 mb-1">Usuario</label>
             <input
               type="text"
@@ -71,18 +69,18 @@ export default function RegisterPage() {
               onChange={e => update('username', e.target.value)}
               placeholder="ej: tano99"
               required
-              pattern="[a-z0-9_]{3,20}"
-              title="Solo letras minúsculas, números y guión bajo (3-20 caracteres)"
+              pattern="[a-zA-Z0-9_]{3,20}"
+              title="Solo letras, números y guión bajo (3-20 caracteres)"
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-green-500"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Email</label>
+            <label className="block text-sm text-gray-300 mb-1">Nombre para mostrar</label>
             <input
-              type="email"
-              value={form.email}
-              onChange={e => update('email', e.target.value)}
-              required
+              type="text"
+              value={form.display_name}
+              onChange={e => update('display_name', e.target.value)}
+              placeholder="ej: El Tano"
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-green-500"
             />
           </div>
