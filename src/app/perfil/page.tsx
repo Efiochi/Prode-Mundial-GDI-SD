@@ -38,7 +38,7 @@ export default async function PerfilPage() {
   ])
 
   const profile = profileResult.data
-  const preds = (predsResult.data ?? []) as PredWithMatch[]
+  const preds = (predsResult.data ?? []) as unknown as PredWithMatch[]
   const lb = lbResult.data
 
   // Stats

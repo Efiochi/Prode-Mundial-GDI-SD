@@ -132,7 +132,7 @@ export default async function MisPrediccionesPage() {
     supabase.from('profiles').select('display_name').eq('id', user.id).single(),
   ])
 
-  const predictions = (predsResult.data ?? []) as PredWithMatch[]
+  const predictions = (predsResult.data ?? []) as unknown as PredWithMatch[]
   const displayName = profileResult.data?.display_name
 
   // Sort by match date asc
