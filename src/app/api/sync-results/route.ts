@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/config'
+import { handleOptions, withCors } from '@/lib/cors'
 
 const STATUS_MAP: Record<string, string> = {
   TIMED: 'SCHEDULED',
@@ -11,12 +12,19 @@ const STATUS_MAP: Record<string, string> = {
   POSTPONED: 'POSTPONED',
 }
 
+export async function OPTIONS(request: Request) {
+  return handleOptions(request) ?? new NextResponse(null, { status: 405 })
+}
+
 // GET /api/sync-results?secret=xxx
 // Syncs results + team names (TBD→real) + status for all matches
 export async function GET(request: Request) {
+  const preflight = handleOptions(request)
+  if (preflight) return preflight
+
   const { searchParams } = new URL(request.url)
   if (searchParams.get('secret') !== process.env.SYNC_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return withCors(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), request)
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -64,5 +72,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ...data, total_matches_processed: results.length })
+  return withCors(
+    NextResponse.json({ ...data, total_matches_processed: results.length }),
+    request
+  )
 }
